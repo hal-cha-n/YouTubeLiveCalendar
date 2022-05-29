@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/googleapi/transport"
@@ -53,13 +54,12 @@ func printChannelInfo(channelID string) {
 	for i, v := range response.Items {
 		fmt.Printf("%d. %+v\n", i, v.Snippet.Title)
 		youtube_video_details(v.Id.VideoId)
-		createEvent()
 	}
 }
 
 func youtube_video_details(videoId string) {
 	service := newYoutubeService(newClient())
-	call := service.Videos.List([]string{"liveStreamingDetails"}).
+	call := service.Videos.List([]string{"snippet", "liveStreamingDetails"}).
 		Id(videoId)
 
 	response, err := call.Do()
@@ -67,20 +67,24 @@ func youtube_video_details(videoId string) {
 		log.Fatalf("%v", err)
 	}
 
-	fmt.Printf("配信予定時刻：%+v", response.Items[0].LiveStreamingDetails.ScheduledStartTime)
+	fmt.Printf("配信予定時刻：%+v\n", response.Items[0].LiveStreamingDetails.ScheduledStartTime)
+	createEvent(response.Items[0])
 }
 
-func createEvent() {
+func createEvent(liveDetail *youtube.Video) {
+
+	startTime, _ := time.Parse(time.RFC3339Nano, liveDetail.LiveStreamingDetails.ScheduledStartTime)
+	endTime := startTime.Add(1 * time.Hour)
 
 	event := &calendar.Event{
-		Summary:     "テスト",
-		Description: "テスト説明",
+		Summary:     liveDetail.Snippet.Title,
+		Description: liveDetail.Snippet.Description,
 		Start: &calendar.EventDateTime{
-			DateTime: "2022-06-04T13:00:00Z",
+			DateTime: liveDetail.LiveStreamingDetails.ScheduledStartTime,
 			TimeZone: "Europe/London",
 		},
 		End: &calendar.EventDateTime{
-			DateTime: "2022-06-04T14:00:00Z",
+			DateTime: endTime.Format(time.RFC3339Nano),
 			TimeZone: "Europe/London",
 		},
 	}
