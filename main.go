@@ -2,58 +2,67 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"time"
+
+	"google.golang.org/api/googleapi/transport"
+	"google.golang.org/api/youtube/v3"
 )
 
+func newClient() *http.Client {
+	client := &http.Client{
+		Transport: &transport.APIKey{Key: os.Getenv("YOUTUBE_KEY")},
+	}
+	return client
+}
+
+func newYoutubeService(client *http.Client) *youtube.Service {
+	service, err := youtube.New(client)
+	if err != nil {
+		log.Fatalf("Unable to create YouTube service: %v", err)
+	}
+
+	return service
+}
+
+func printChannelInfo(channelID string) {
+	service := newYoutubeService(newClient())
+	call := service.Channels.List([]string{"snippet", "contentDetails", "statistics"}).
+		Id(channelID).
+		MaxResults(1)
+	response, err := call.Do()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	item := response.Items[0]
+
+	id := item.Id
+	name := item.Snippet.Title
+	description := item.Snippet.Description
+	thumbnailURL := item.Snippet.Thumbnails.High.Url
+	playlistID := item.ContentDetails.RelatedPlaylists.Uploads
+	viewCount := item.Statistics.ViewCount
+	subscriberCount := item.Statistics.SubscriberCount
+	videoCount := item.Statistics.VideoCount
+
+	fmt.Printf("channel id: %v\n\nチャンネル名: \n%v\n\n説明: %v\n\nサムネイルURL: %v\n\nplaylist id: %v\n\n総再生回数: %v\n\nチャンネル登録者数: %v\n\n動画数: %v\n",
+		id,
+		name,
+		description,
+		thumbnailURL,
+		playlistID,
+		viewCount,
+		subscriberCount,
+		videoCount,
+	)
+}
+
 func main() {
-	developer_key := get_developer_key()
-	youtube_search_list := search_youtube_list(developer_key)
-	fmt.Println(youtube_search_list)
+	printChannelInfo("UCdre9A9clPahkJBdlKMCZpw")
 }
 
 func get_developer_key() string {
 	developer_key := os.Getenv("YOUTUBE_KEY")
 	return developer_key
-}
-
-func search_youtube_list(developer_key string) string {
-	url := "https://www.googleapis.com/youtube/v3/search"
-
-	request, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//クエリパラメータ
-	params := request.URL.Query()
-	params.Add("key", developer_key)
-	params.Add("q", "洋楽")
-	params.Add("part", "snippet, id")
-	params.Add("maxResults", "1")
-
-	request.URL.RawQuery = params.Encode()
-
-	timeout := time.Duration(5 * time.Second)
-	client := &http.Client{
-		Timeout: timeout,
-	}
-
-	response, err := client.Do(request)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// fmt.Println(string(body))
-	return string(body)
 }
