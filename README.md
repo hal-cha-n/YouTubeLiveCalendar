@@ -1,0 +1,2 @@
+# YouTubeLiveCalendar
+YouTubeのAPIを定期的に実行し、配信予定をGoogleカレンダーに登録する装置
