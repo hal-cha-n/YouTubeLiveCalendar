@@ -30,7 +30,8 @@ func printChannelInfo(channelID string) {
 	service := newYoutubeService(newClient())
 	call := service.Search.List([]string{"snippet", "id"}).
 		ChannelId(channelID).
-		Order("date")
+		Order("date").
+		MaxResults(1)
 
 	response, err := call.Do()
 	if err != nil {
@@ -38,8 +39,22 @@ func printChannelInfo(channelID string) {
 	}
 
 	for i, v := range response.Items {
-		fmt.Printf("%d. %+v: %+v\n", i, v.Snippet.Title, v.Snippet.PublishedAt)
+		fmt.Printf("%d. %+v\n", i, v.Snippet.Title)
+		youtube_video_details(v.Id.VideoId)
 	}
+}
+
+func youtube_video_details(videoId string) {
+	service := newYoutubeService(newClient())
+	call := service.Videos.List([]string{"liveStreamingDetails"}).
+		Id(videoId)
+
+	response, err := call.Do()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	fmt.Printf("配信予定時刻：%+v", response.Items[0].LiveStreamingDetails.ScheduledStartTime)
 }
 
 func main() {
