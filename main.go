@@ -60,7 +60,7 @@ func getChannelInfo(channelID string) *youtube.SearchResult {
 	return response.Items[0]
 }
 
-func youtube_video_details(videoId string) {
+func getVideoDetail(videoId string) *youtube.Video {
 	service := newYoutubeService(newClient())
 	call := service.Videos.List([]string{"snippet", "liveStreamingDetails"}).
 		Id(videoId)
@@ -70,8 +70,7 @@ func youtube_video_details(videoId string) {
 		log.Fatalf("%v", err)
 	}
 
-	fmt.Printf("配信予定時刻：%+v\n", response.Items[0].LiveStreamingDetails.ScheduledStartTime)
-	createEvent(response.Items[0])
+	return response.Items[0]
 }
 
 func createEvent(liveDetail *youtube.Video) {
@@ -99,12 +98,15 @@ func createEvent(liveDetail *youtube.Video) {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-
-	fmt.Println("success")
 }
 
 func main() {
 	channelInfo := getChannelInfo(os.Getenv("YLC_CHANNEL_ID"))
-	fmt.Printf("%+v\n", channelInfo.Snippet.Title)
-	youtube_video_details(channelInfo.Id.VideoId)
+	fmt.Printf("取得配信: %+v\n", channelInfo.Snippet.Title)
+
+	videoDetail := getVideoDetail(channelInfo.Id.VideoId)
+	fmt.Printf("配信予定時刻：%+v\n", videoDetail.LiveStreamingDetails.ScheduledStartTime)
+
+	createEvent(videoDetail)
+	fmt.Println("カレンダー登録完了")
 }
