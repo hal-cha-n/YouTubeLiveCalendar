@@ -1,5 +1,11 @@
 package main
 
+// 必須環境変数
+// YLC_API_KEY: YouTube v3 API へのアクセスを許可したGCPのAPIキー
+// YLC_CHANNEL_ID: 配信の予定を取得するYouTubeチャンネルのID
+// YLC_CALENDAR_ID: 配信の予定を追加するGoogleカレンダーのID
+// GOOGLE_APPLICATION_CREDENTIALS: Googleカレンダーへのアクセスを許可したサービスアカウントの認証情報
+
 import (
 	"context"
 	"fmt"
@@ -15,7 +21,7 @@ import (
 
 func newClient() *http.Client {
 	client := &http.Client{
-		Transport: &transport.APIKey{Key: os.Getenv("YOUTUBE_KEY")},
+		Transport: &transport.APIKey{Key: os.Getenv("YLC_API_KEY")},
 	}
 	return client
 }
@@ -90,7 +96,7 @@ func createEvent(liveDetail *youtube.Video) {
 	}
 
 	service := newCalenderService()
-	call := service.Events.Insert("m323k3iij27jdlq1m0qvoppldo@group.calendar.google.com", event)
+	call := service.Events.Insert(os.Getenv("YLC_CALENDAR_ID"), event)
 
 	_, err := call.Do()
 	if err != nil {
@@ -101,10 +107,5 @@ func createEvent(liveDetail *youtube.Video) {
 }
 
 func main() {
-	printChannelInfo("UCdre9A9clPahkJBdlKMCZpw")
-}
-
-func get_developer_key() string {
-	developer_key := os.Getenv("YOUTUBE_KEY")
-	return developer_key
+	printChannelInfo(os.Getenv("YLC_CHANNEL_ID"))
 }
