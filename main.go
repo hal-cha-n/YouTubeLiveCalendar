@@ -39,13 +39,13 @@ func newCalenderService() *calendar.Service {
 	ctx := context.Background()
 	service, err := calendar.NewService(ctx)
 	if err != nil {
-		log.Fatalf("Unable to create YouTube service: %v", err)
+		log.Fatalf("Unable to create Calender service: %v", err)
 	}
 
 	return service
 }
 
-func printChannelInfo(channelID string) {
+func getChannelInfo(channelID string) *youtube.SearchResult {
 	service := newYoutubeService(newClient())
 	call := service.Search.List([]string{"snippet", "id"}).
 		ChannelId(channelID).
@@ -57,10 +57,7 @@ func printChannelInfo(channelID string) {
 		log.Fatalf("%v", err)
 	}
 
-	for i, v := range response.Items {
-		fmt.Printf("%d. %+v\n", i, v.Snippet.Title)
-		youtube_video_details(v.Id.VideoId)
-	}
+	return response.Items[0]
 }
 
 func youtube_video_details(videoId string) {
@@ -107,5 +104,7 @@ func createEvent(liveDetail *youtube.Video) {
 }
 
 func main() {
-	printChannelInfo(os.Getenv("YLC_CHANNEL_ID"))
+	channelInfo := getChannelInfo(os.Getenv("YLC_CHANNEL_ID"))
+	fmt.Printf("%+v\n", channelInfo.Snippet.Title)
+	youtube_video_details(channelInfo.Id.VideoId)
 }
