@@ -73,14 +73,16 @@ func getVideoDetail(videoId string) *youtube.Video {
 	return response.Items[0]
 }
 
-func createEvent(liveDetail *youtube.Video) {
+func createEvent(liveDetail *youtube.Video) *calendar.Event {
 
 	startTime, _ := time.Parse(time.RFC3339Nano, liveDetail.LiveStreamingDetails.ScheduledStartTime)
 	endTime := startTime.Add(1 * time.Hour) // 配信時間はYouTubeから取得できないため、1時間とする。
 
+	description := "試聴はこちらから: https://www.youtube.com/watch?v=" + liveDetail.Id + "\n\n" + liveDetail.Snippet.Description
+
 	event := &calendar.Event{
 		Summary:     liveDetail.Snippet.Title,
-		Description: liveDetail.Snippet.Description,
+		Description: description,
 		Start: &calendar.EventDateTime{
 			DateTime: liveDetail.LiveStreamingDetails.ScheduledStartTime,
 			TimeZone: "Europe/London",
@@ -94,10 +96,11 @@ func createEvent(liveDetail *youtube.Video) {
 	service := newCalenderService()
 	call := service.Events.Insert(os.Getenv("YLC_CALENDAR_ID"), event)
 
-	_, err := call.Do()
+	response, err := call.Do()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+	return response
 }
 
 func main() {
@@ -107,6 +110,6 @@ func main() {
 	videoDetail := getVideoDetail(channelInfo.Id.VideoId)
 	fmt.Printf("配信予定時刻：%+v\n", videoDetail.LiveStreamingDetails.ScheduledStartTime)
 
-	createEvent(videoDetail)
-	fmt.Println("カレンダー登録完了")
+	event := createEvent(videoDetail)
+	fmt.Printf("カレンダー登録完了: %s\n", event.HtmlLink)
 }
