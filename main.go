@@ -19,6 +19,11 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
+func liveEndTime(liveStartTime string) string {
+	parsedLiveStartTime, _ := time.Parse(time.RFC3339, liveStartTime)
+	return parsedLiveStartTime.Add(1 * time.Hour).Format(time.RFC3339) // 配信時間はYouTubeから取得できないため、1時間とする。
+}
+
 func newClient() *http.Client {
 	client := &http.Client{
 		Transport: &transport.APIKey{Key: os.Getenv("YLC_API_KEY")},
@@ -75,20 +80,18 @@ func getVideoDetail(videoId string) *youtube.Video {
 
 func createEvent(liveDetail *youtube.Video) *calendar.Event {
 
-	startTime, _ := time.Parse(time.RFC3339Nano, liveDetail.LiveStreamingDetails.ScheduledStartTime)
-	endTime := startTime.Add(1 * time.Hour) // 配信時間はYouTubeから取得できないため、1時間とする。
-
+	startTime := liveDetail.LiveStreamingDetails.ScheduledStartTime
 	description := "試聴はこちらから: https://www.youtube.com/watch?v=" + liveDetail.Id + "\n\n" + liveDetail.Snippet.Description
 
 	event := &calendar.Event{
 		Summary:     liveDetail.Snippet.Title,
 		Description: description,
 		Start: &calendar.EventDateTime{
-			DateTime: liveDetail.LiveStreamingDetails.ScheduledStartTime,
+			DateTime: startTime,
 			TimeZone: "Europe/London",
 		},
 		End: &calendar.EventDateTime{
-			DateTime: endTime.Format(time.RFC3339Nano),
+			DateTime: liveEndTime(startTime),
 			TimeZone: "Europe/London",
 		},
 	}
