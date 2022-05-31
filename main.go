@@ -76,7 +76,7 @@ func getVideoDetail(videoId string) *youtube.Video {
 func createEvent(liveDetail *youtube.Video) {
 
 	startTime, _ := time.Parse(time.RFC3339Nano, liveDetail.LiveStreamingDetails.ScheduledStartTime)
-	endTime := startTime.Add(1 * time.Hour)
+	endTime := startTime.Add(1 * time.Hour) // 配信時間はYouTubeから取得できないため、1時間とする。
 
 	event := &calendar.Event{
 		Summary:     liveDetail.Snippet.Title,
