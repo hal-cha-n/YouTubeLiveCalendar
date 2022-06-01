@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/api/calendar/v3"
@@ -78,10 +79,27 @@ func getVideoDetail(videoId string) *youtube.Video {
 	return response.Items[0]
 }
 
-func createEvent(liveDetail *youtube.Video) *calendar.Event {
+func getEvents(liveDetail *youtube.Video) *calendar.Events {
 
 	startTime := liveDetail.LiveStreamingDetails.ScheduledStartTime
+	service := newCalenderService()
+	call := service.Events.List(os.Getenv("YLC_CALENDAR_ID")).
+		TimeMin(startTime).
+		TimeMax(liveEndTime(startTime))
+
+	response, err := call.Do()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	return response
+}
+
+func createEventOrUpdate(liveDetail *youtube.Video) *calendar.Event {
+
+	events := getEvents(liveDetail)
+	startTime := liveDetail.LiveStreamingDetails.ScheduledStartTime
 	description := "試聴はこちらから: https://www.youtube.com/watch?v=" + liveDetail.Id + "\n\n" + liveDetail.Snippet.Description
+	service := newCalenderService()
 
 	event := &calendar.Event{
 		Summary:     liveDetail.Snippet.Title,
@@ -96,9 +114,25 @@ func createEvent(liveDetail *youtube.Video) *calendar.Event {
 		},
 	}
 
-	service := newCalenderService()
-	call := service.Events.Insert(os.Getenv("YLC_CALENDAR_ID"), event)
+	for i, v := range events.Items {
+		fmt.Printf("同時刻の配信予定[%d]： %+v\n", i, v.Summary)
+	}
 
+	// 特定のIDを含む場合
+	for i, v := range events.Items {
+		if strings.Contains(v.Description, liveDetail.Id) {
+			call := service.Events.Update(os.Getenv("YLC_CALENDAR_ID"), v.Id, event)
+			response, err := call.Do()
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+			fmt.Printf("[%d]の予定と一致したため予定を上書きします。\n", i)
+			return response
+		}
+	}
+
+	// 新しい予定として作成する。
+	call := service.Events.Insert(os.Getenv("YLC_CALENDAR_ID"), event)
 	response, err := call.Do()
 	if err != nil {
 		log.Fatalf("%v", err)
@@ -111,8 +145,8 @@ func main() {
 	fmt.Printf("取得配信: %+v\n", channelInfo.Snippet.Title)
 
 	videoDetail := getVideoDetail(channelInfo.Id.VideoId)
-	fmt.Printf("配信予定時刻：%+v\n", videoDetail.LiveStreamingDetails.ScheduledStartTime)
+	fmt.Printf("配信予定時刻: %+v\n", videoDetail.LiveStreamingDetails.ScheduledStartTime)
 
-	event := createEvent(videoDetail)
+	event := createEventOrUpdate(videoDetail)
 	fmt.Printf("カレンダー登録完了: %s\n", event.HtmlLink)
 }
