@@ -4,6 +4,9 @@
 
 YouTubeのAPIを定期的に実行し、配信予定をGoogleカレンダーに登録する装置
 
+公開カレンダー
+https://calendar.google.com/calendar/embed?src=m323k3iij27jdlq1m0qvoppldo%40group.calendar.google.com&ctz=Asia%2FTokyo
+
 制作の様子は[こちら](https://www.youtube.com/watch?v=RcKMFUpcdaM)をご覧ください。
 
 ※制作中
