@@ -20,4 +20,8 @@ jobs:
 
     - name: Run
       run: go run main.go
+      env:
+          YLC_API_KEY: ${{ secrets.YLC_API_KEY }}
+          YLC_CHANNEL_ID: ${{ secrets.YLC_CHANNEL_ID }}
+          YLC_CALENDAR_ID: ${{ secrets.YLC_CALENDAR_ID }}
 
