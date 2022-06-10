@@ -1,6 +1,6 @@
 # YouTubeLiveCalendar
 
-[![Distribution](https://github.com/hal-cha-n/YouTubeLiveCalendar/actions/workflows/distribution.yml/badge.svg)](https://github.com/hal-cha-n/YouTubeLiveCalendar/actions/workflows/distribution.yml)
+[![Distribution](https://github.com/hal-cha-n/YouTubeLiveCalendar/actions/workflows/distribution.yml/badge.svg?event=schedule)](https://github.com/hal-cha-n/YouTubeLiveCalendar/actions/workflows/distribution.yml)
 
 ![自動的に配信予定が登録されるGoogleカレンダーを作ろう。_nolive](https://user-images.githubusercontent.com/40711834/171451392-8fe8cae0-db16-48e2-8be3-259a840b7795.png)
 
