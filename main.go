@@ -1,7 +1,6 @@
 package main
 
 // 必須環境変数
-// YLC_API_KEY: YouTube v3 API へのアクセスを許可したGCPのAPIキー
 // YLC_CHANNEL_ID: 配信の予定を取得するYouTubeチャンネルのID
 // YLC_CALENDAR_ID: 配信の予定を追加するGoogleカレンダーのID
 // GOOGLE_APPLICATION_CREDENTIALS: Googleカレンダーへのアクセスを許可したサービスアカウントの認証情報
