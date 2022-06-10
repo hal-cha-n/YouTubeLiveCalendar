@@ -1,4 +1,4 @@
-name: Go
+name: Distribution
 
 on:
   schedule:
@@ -21,7 +21,6 @@ jobs:
     -  name: Set up Cloud SDK
        uses: google-github-actions/setup-gcloud@v0.2.0
        with:
-         project_id: ${{ secrets.gcp_project }}
          service_account_key: ${{ secrets.gcp_credentials }}
          export_default_credentials: true
 
