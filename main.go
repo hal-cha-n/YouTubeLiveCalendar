@@ -10,13 +10,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"google.golang.org/api/calendar/v3"
-	"google.golang.org/api/googleapi/transport"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -25,15 +23,9 @@ func liveEndTime(liveStartTime string) string {
 	return parsedLiveStartTime.Add(1 * time.Hour).Format(time.RFC3339) // 配信時間はYouTubeから取得できないため、1時間とする。
 }
 
-func newClient() *http.Client {
-	client := &http.Client{
-		Transport: &transport.APIKey{Key: os.Getenv("YLC_API_KEY")},
-	}
-	return client
-}
-
-func newYoutubeService(client *http.Client) *youtube.Service {
-	service, err := youtube.New(client)
+func newYoutubeService() *youtube.Service {
+	ctx := context.Background()
+	service, err := youtube.NewService(ctx)
 	if err != nil {
 		log.Fatalf("Unable to create YouTube service: %v", err)
 	}
@@ -52,7 +44,7 @@ func newCalenderService() *calendar.Service {
 }
 
 func getChannelInfo(channelID string) []*youtube.SearchResult {
-	service := newYoutubeService(newClient())
+	service := newYoutubeService()
 	call := service.Search.List([]string{"snippet", "id"}).
 		Type("video").
 		EventType("upcoming").
@@ -68,7 +60,7 @@ func getChannelInfo(channelID string) []*youtube.SearchResult {
 }
 
 func getVideoDetail(videoId string) *youtube.Video {
-	service := newYoutubeService(newClient())
+	service := newYoutubeService()
 	call := service.Videos.List([]string{"snippet", "liveStreamingDetails"}).
 		Id(videoId)
 
@@ -81,7 +73,6 @@ func getVideoDetail(videoId string) *youtube.Video {
 }
 
 func getEvents(liveDetail *youtube.Video) *calendar.Events {
-
 	startTime := liveDetail.LiveStreamingDetails.ScheduledStartTime
 	service := newCalenderService()
 	call := service.Events.List(os.Getenv("YLC_CALENDAR_ID")).
@@ -96,7 +87,6 @@ func getEvents(liveDetail *youtube.Video) *calendar.Events {
 }
 
 func createEventOrUpdate(liveDetail *youtube.Video) *calendar.Event {
-
 	events := getEvents(liveDetail)
 	startTime := liveDetail.LiveStreamingDetails.ScheduledStartTime
 	description := "試聴はこちらから: https://www.youtube.com/watch?v=" + liveDetail.Id + "\n\n" + liveDetail.Snippet.Description
