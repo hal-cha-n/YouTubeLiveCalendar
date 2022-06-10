@@ -51,19 +51,20 @@ func newCalenderService() *calendar.Service {
 	return service
 }
 
-func getChannelInfo(channelID string) *youtube.SearchResult {
+func getChannelInfo(channelID string) []*youtube.SearchResult {
 	service := newYoutubeService(newClient())
 	call := service.Search.List([]string{"snippet", "id"}).
+		Type("video").
+		EventType("upcoming").
 		ChannelId(channelID).
-		Order("date").
-		MaxResults(1)
+		Order("date")
 
 	response, err := call.Do()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
-	return response.Items[0]
+	return response.Items
 }
 
 func getVideoDetail(videoId string) *youtube.Video {
@@ -115,7 +116,7 @@ func createEventOrUpdate(liveDetail *youtube.Video) *calendar.Event {
 	}
 
 	for i, v := range events.Items {
-		fmt.Printf("同時刻の配信予定[%d]： %+v\n", i, v.Summary)
+		fmt.Printf("  同時刻の配信予定[%d]： %+v\n", i, v.Summary)
 	}
 
 	// 特定のIDを含む場合
@@ -126,7 +127,7 @@ func createEventOrUpdate(liveDetail *youtube.Video) *calendar.Event {
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
-			fmt.Printf("[%d]の予定と一致したため予定を上書きします。\n", i)
+			fmt.Printf("  [%d]の予定と一致したため予定を上書きします。\n", i)
 			return response
 		}
 	}
@@ -141,12 +142,16 @@ func createEventOrUpdate(liveDetail *youtube.Video) *calendar.Event {
 }
 
 func main() {
-	channelInfo := getChannelInfo(os.Getenv("YLC_CHANNEL_ID"))
-	fmt.Printf("取得配信: %+v\n", channelInfo.Snippet.Title)
+	channelInfos := getChannelInfo(os.Getenv("YLC_CHANNEL_ID"))
+	fmt.Printf("%d件の配信予定\n", len(channelInfos))
 
-	videoDetail := getVideoDetail(channelInfo.Id.VideoId)
-	fmt.Printf("配信予定時刻: %+v\n", videoDetail.LiveStreamingDetails.ScheduledStartTime)
+	for _, channelInfo := range channelInfos {
+		fmt.Printf("取得配信: %+v\n", channelInfo.Snippet.Title)
 
-	event := createEventOrUpdate(videoDetail)
-	fmt.Printf("カレンダー登録完了: %s\n", event.HtmlLink)
+		videoDetail := getVideoDetail(channelInfo.Id.VideoId)
+		fmt.Printf("  配信予定時刻: %+v\n", videoDetail.LiveStreamingDetails.ScheduledStartTime)
+
+		event := createEventOrUpdate(videoDetail)
+		fmt.Printf("  カレンダー登録完了: %s\n", event.HtmlLink)
+	}
 }
